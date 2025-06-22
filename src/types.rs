@@ -29,6 +29,14 @@ impl<T> Data<T> {
             Data::Unknown => panic!("cannot unwrap unknown data"),
         }
     }
+
+    /// Convert to option to be able to use its API
+    fn as_option(&self) -> Option<&T> {
+        match self {
+            Data::Known(v) => Some(v),
+            Data::Unknown => None,
+        }
+    }
 }
 
 #[derive(PartialEq, Eq, Clone, Debug)]

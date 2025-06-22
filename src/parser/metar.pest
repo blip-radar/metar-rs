@@ -4,8 +4,7 @@ metar = {
     observation_time ~
     corrected? ~
     auto? ~
-    wind? ~
-    wind_varying? ~
+    (wind ~ wind_varying?)? ~
     atmos_condition? ~
     temperatures? ~
     pressure? ~
@@ -84,9 +83,9 @@ atmos_condition = {
      restricted_visibility_horizontal* ~
      rvr* ~
      ("SKC" | "CLR" |
-      (wx)* ~
-      (visibility_vertical)? ~
-      ("NCD" | "NSC" | "CLR" | (cloud)*)))
+      wx* ~
+      visibility_vertical? ~
+      (no_clouds_detected | "NSC" | "CLR" | cloud*)))
 }
 
 visibility_horizontal = @{
@@ -136,7 +135,7 @@ rvr_trend = @{
 }
 
 wx = ${
-    wx_intensity? ~ wx_condition+
+    ("//" | (wx_intensity? ~ wx_condition+)) ~ (WHITESPACE | EOI)
 }
 
 wx_intensity = @{
@@ -150,6 +149,7 @@ wx_condition = @{
     "PY" | "SQ" | "PO" | "DS" | "SS" | "FC"
 }
 
+no_clouds_detected = @{ "NCD" }
 cloud = ${
     cloud_density ~ cloud_floor ~ cloud_type?
 }
@@ -221,13 +221,22 @@ runway_braking_action = @{
 }
 
 trend = {
-    wx_significant_conditions |
-    ("BECMG" ~ wx_change_time? ~ wx_change_conditions) |
-    ("TEMPO" ~ wx_change_time? ~ wx_change_conditions)
+    no_significant_change |
+    becoming |
+    tempo
 }
 
-wx_significant_conditions = @{
-    "NOSIG" |
+no_significant_change = @{
+    "NOSIG"
+}
+becoming = {
+    "BECMG" ~ wx_change_time? ~ wx_change_conditions
+}
+tempo = {
+    "TEMPO" ~ wx_change_time? ~ wx_change_conditions
+}
+
+no_significant_weather = @{
     "NSW"
 }
 
@@ -236,7 +245,7 @@ wx_change_time = @{
 }
 
 wx_change_conditions = {
-    wx_significant_conditions? ~ (wind ~ wind_varying?)? ~ visibility_horizontal? ~ wx* ~ cloud*
+    no_significant_weather? ~ (wind ~ wind_varying?)? ~ atmos_condition
 }
 
 cloud_direction = ${

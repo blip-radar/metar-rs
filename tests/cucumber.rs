@@ -168,22 +168,31 @@ fn check_dewp_unk(w: &mut World) {
 #[then(expr = "the pressure is {int} hPa")]
 fn check_pressure_hpa(w: &mut World, pressure: u16) {
     let metar = w.metar();
-    assert_eq!(&Pressure::Hectopascals(pressure), metar.pressure.unwrap());
+    assert_eq!(
+        Pressure::Hectopascals(Data::Known(pressure)),
+        metar.pressure
+    );
 }
 
 #[then(expr = "the pressure is {float} inHg")]
 fn check_pressure_inhg(w: &mut World, pressure: f32) {
     let metar = w.metar();
     assert_eq!(
-        &Pressure::InchesOfMercury(pressure),
-        metar.pressure.unwrap()
+        Pressure::InchesOfMercury(Data::Known(pressure)),
+        metar.pressure
     );
 }
 
-#[then(expr = "the pressure is unknown")]
-fn check_pressure_unk(w: &mut World) {
+#[then(expr = "the pressure is unknown hPa")]
+fn check_pressure_unk_hpa(w: &mut World) {
     let metar = w.metar();
-    assert_eq!(Data::Unknown, metar.pressure);
+    assert_eq!(Pressure::Hectopascals(Data::Unknown), metar.pressure);
+}
+
+#[then(expr = "the pressure is unknown inHg")]
+fn check_pressure_unk_inhg(w: &mut World) {
+    let metar = w.metar();
+    assert_eq!(Pressure::InchesOfMercury(Data::Unknown), metar.pressure);
 }
 
 fn main() {

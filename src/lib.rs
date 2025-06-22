@@ -39,22 +39,26 @@ pub struct Metar {
     pub wind: Wind,
     /// The current visibility
     pub visibility: Data<Visibility>,
+    /// The Runway Visual Ranges
+    pub rvr: Vec<RunwayVisualRange>,
     /// The current clouds
     pub clouds: Data<Clouds>,
-    /// The current clouds
-    pub cloud_layers: Vec<CloudLayer>,
     /// The current vertical visibility, in feet
     pub vert_visibility: Option<VertVisibility>,
     /// The current weather conditions
-    pub weather: Vec<Weather>,
+    pub weather: Data<Vec<Weather>>,
     /// The current temperature
     pub temperature: Data<i32>,
     /// The current dewpoint
     pub dewpoint: Data<i32>,
     /// The current air pressure
-    pub pressure: Data<Pressure>,
+    pub pressure: Pressure,
+    /// Recent weather phenomena
+    pub recent_weather: Option<Vec<WeatherCondition>>,
     /// Remarks added on to the METAR
     pub remarks: Option<String>,
+    /// The trend
+    pub trend: Vec<Trend>,
 }
 
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -93,5 +97,80 @@ impl Metar {
         S: Into<String>,
     {
         parser::parse(data.into())
+    }
+}
+
+impl fmt::Display for Metar {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.station)?;
+        f.write_str(" ")?;
+
+        write!(f, "{} ", self.time)?;
+        if self.is_auto {
+            f.write_str("AUTO ")?;
+        }
+        write!(f, "{} ", self.wind)?;
+
+        write!(f, "{} ", self.visibility.to_opt_string(4))?;
+
+        for rvr in &self.rvr {
+            write!(f, "{rvr} ")?;
+        }
+
+        match &self.weather {
+            Data::Known(wx) => {
+                let wx_str = wx
+                    .iter()
+                    .map(ToString::to_string)
+                    .collect::<Vec<_>>()
+                    .join(" ");
+                if !wx_str.is_empty() {
+                    write!(f, "{wx_str} ")?;
+                }
+            }
+            Data::Unknown => f.write_str("// ")?,
+        }
+
+        if let Some(vv) = &self.vert_visibility {
+            write!(f, "{vv} ")?;
+        }
+
+        if !self
+            .visibility
+            .as_option()
+            .is_some_and(|vis| *vis == Visibility::CAVOK)
+        {
+            let clouds = self.clouds.to_opt_string(9);
+            if !clouds.is_empty() {
+                write!(f, "{clouds} ")?;
+            }
+        }
+
+        write!(
+            f,
+            "{:0>2}/{:0>2}",
+            self.temperature.to_opt_string(2),
+            self.dewpoint.to_opt_string(2)
+        )?;
+
+        write!(f, " {}", self.pressure)?;
+
+        if let Some(recent) = &self.recent_weather {
+            write!(
+                f,
+                " RE{}",
+                recent.iter().map(ToString::to_string).collect::<String>()
+            )?;
+        }
+
+        for trend in &self.trend {
+            write!(f, " {trend}")?;
+        }
+
+        if let Some(remarks) = &self.remarks {
+            write!(f, " {remarks}")?;
+        }
+
+        Ok(())
     }
 }

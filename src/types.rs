@@ -30,11 +30,29 @@ impl<T> Data<T> {
         }
     }
 
-    /// Convert to option to be able to use its API
-    fn as_option(&self) -> Option<&T> {
+    /// Handle as Option to be able to use its API
+    pub fn as_option(&self) -> Option<&T> {
         match self {
             Data::Known(v) => Some(v),
             Data::Unknown => None,
+        }
+    }
+
+    /// Convert to Option to be able to use its API
+    pub fn into_option(self) -> Option<T> {
+        match self {
+            Data::Known(v) => Some(v),
+            Data::Unknown => None,
+        }
+    }
+}
+
+impl<T: fmt::Display> Data<T> {
+    /// Returns a String replacing unknown values with n*"/"
+    pub fn to_opt_string(&self, n: usize) -> String {
+        match self {
+            Data::Known(w) => w.to_string(),
+            Data::Unknown => "/".repeat(n),
         }
     }
 }
@@ -74,15 +92,6 @@ impl fmt::Display for WindDirection {
     }
 }
 
-impl fmt::Display for Data<WindDirection> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Data::Known(w) => w.fmt(f),
-            Data::Unknown => f.write_str("///"),
-        }
-    }
-}
-
 #[derive(PartialEq, Eq, Clone, Debug, Hash)]
 /// A representation of the wind unit
 pub enum WindUnit {
@@ -115,13 +124,104 @@ pub enum Visibility {
     StatuteMiles(f32),
 }
 
+impl fmt::Display for Visibility {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Visibility::CAVOK => f.write_str("CAVOK"),
+            Visibility::Metres(m) => write!(f, "{m:04}"),
+            // FIXME fractions
+            Visibility::StatuteMiles(sm) => write!(f, "{sm}SM"),
+        }
+    }
+}
+
+#[derive(PartialEq, Clone, Debug)]
+/// Runway Visual Range
+pub struct RunwayVisualRange {
+    /// Runway for which the Runway Visual Range is applicable
+    pub runway: String,
+    /// Trend of the Runway Visual Range
+    pub trend: RvrTrend,
+    /// Measured value of the Runway Visual Range
+    pub value: RvrValue,
+    /// Optionally a second value to which value varies to
+    pub varying_to: Option<RvrValue>,
+}
+
+impl fmt::Display for RunwayVisualRange {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "R{}/{}{}{}",
+            self.runway,
+            self.value,
+            self.varying_to
+                .as_ref()
+                .map_or(String::new(), |v| format!("V{v}")),
+            self.trend
+        )
+    }
+}
+
+#[derive(PartialEq, Clone, Debug)]
+/// Trend of the RVR
+pub enum RvrTrend {
+    /// Improving
+    UpwardTendency,
+    /// No significant change
+    NoChange,
+    /// Worsening
+    DownwardTendency,
+}
+
+impl fmt::Display for RvrTrend {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            RvrTrend::UpwardTendency => "U",
+            RvrTrend::NoChange => "N",
+            RvrTrend::DownwardTendency => "D",
+        })
+    }
+}
+
+#[derive(PartialEq, Clone, Debug)]
+/// Value of the RVR
+pub enum RvrValue {
+    /// Greater than the value due to capability of measuring instruments
+    GreaterThan(u32),
+    /// The value measured
+    Exactly(u32),
+    /// Lesser than the value due to capability of measuring instruments
+    LessThan(u32),
+}
+
+impl fmt::Display for RvrValue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::GreaterThan(v) => write!(f, "P{v:04}"),
+            Self::Exactly(v) => write!(f, "{v:04}"),
+            Self::LessThan(v) => write!(f, "M{v:04}"),
+        }
+    }
+}
+
 #[derive(PartialEq, Clone, Debug)]
 /// Measured air pressure
 pub enum Pressure {
     /// Pressure in hectopascals
-    Hectopascals(u16),
+    Hectopascals(Data<u16>),
     /// Pressure in inches of mercury (inHg)
-    InchesOfMercury(f32),
+    InchesOfMercury(Data<f32>),
+}
+
+impl fmt::Display for Pressure {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Pressure::Hectopascals(hpa) => write!(f, "Q{:0>4}", hpa.to_opt_string(4)),
+            Pressure::InchesOfMercury(Data::Known(inhg)) => write!(f, "{:04.0}", inhg * 100.0),
+            Pressure::InchesOfMercury(Data::Unknown) => Ok(()),
+        }
+    }
 }
 
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -134,6 +234,15 @@ pub enum VertVisibility {
     ReducedByUnknownAmount,
 }
 
+impl fmt::Display for VertVisibility {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            VertVisibility::Distance(d) => write!(f, "VV{d:0>3}"),
+            VertVisibility::ReducedByUnknownAmount => f.write_str("VV///"),
+        }
+    }
+}
+
 #[derive(PartialEq, Eq, Clone, Debug, Hash)]
 /// Cloud state
 pub enum Clouds {
@@ -142,25 +251,62 @@ pub enum Clouds {
     /// No significant cloud was detected below 5000ft
     NoSignificantCloud,
     /// Layers of cloud, described elsewhere
-    CloudLayers,
+    CloudLayers(Vec<CloudLayer>),
 }
 
-#[derive(PartialEq, Eq, Clone, Debug)]
+impl fmt::Display for Clouds {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Clouds::NoCloudDetected => f.write_str("NCD"),
+            Clouds::NoSignificantCloud => f.write_str("NSC"),
+            Clouds::CloudLayers(cls) => f.write_str(
+                &cls.iter()
+                    .map(ToString::to_string)
+                    .collect::<Vec<_>>()
+                    .join(" "),
+            ),
+        }
+    }
+}
+
+#[derive(PartialEq, Eq, Clone, Debug, Hash)]
 /// Cloud cover
 pub enum CloudLayer {
     /// Few clouds (1/8)
-    Few(CloudType, Option<u32>),
+    Few(CloudType, Data<u32>),
     /// Scattered cloud cover (3/8)
-    Scattered(CloudType, Option<u32>),
+    Scattered(CloudType, Data<u32>),
     /// Broken cloud cover (5/8)
-    Broken(CloudType, Option<u32>),
+    Broken(CloudType, Data<u32>),
     /// Overcast cloud cover (7/8)
-    Overcast(CloudType, Option<u32>),
+    Overcast(CloudType, Data<u32>),
     /// Cloud cover of an unknown density
-    Unknown(CloudType, Option<u32>),
+    Unknown(CloudType, Data<u32>),
 }
 
-#[derive(PartialEq, Eq, Clone, Debug)]
+impl fmt::Display for CloudLayer {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            CloudLayer::Few(cloud_type, height) => {
+                write!(f, "FEW{:0>3}{}", height.to_opt_string(3), cloud_type)
+            }
+            CloudLayer::Scattered(cloud_type, height) => {
+                write!(f, "SCT{:0>3}{}", height.to_opt_string(3), cloud_type)
+            }
+            CloudLayer::Broken(cloud_type, height) => {
+                write!(f, "BKN{:0>3}{}", height.to_opt_string(3), cloud_type)
+            }
+            CloudLayer::Overcast(cloud_type, height) => {
+                write!(f, "OVC{:0>3}{}", height.to_opt_string(3), cloud_type)
+            }
+            CloudLayer::Unknown(cloud_type, height) => {
+                write!(f, "///{:0>3}{}", height.to_opt_string(3), cloud_type)
+            }
+        }
+    }
+}
+
+#[derive(PartialEq, Eq, Clone, Debug, Hash)]
 /// A cloud type description
 pub enum CloudType {
     /// A normal cloud
@@ -173,6 +319,17 @@ pub enum CloudType {
     Unknown,
 }
 
+impl fmt::Display for CloudType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            CloudType::Normal => "",
+            CloudType::Cumulonimbus => "CB",
+            CloudType::ToweringCumulus => "TCU",
+            CloudType::Unknown => "///",
+        })
+    }
+}
+
 #[derive(PartialEq, Eq, Clone, Debug)]
 /// A weather information block
 pub struct Weather {
@@ -180,6 +337,20 @@ pub struct Weather {
     pub intensity: WeatherIntensity,
     /// The weather condition/s this block describes.
     pub conditions: Vec<WeatherCondition>,
+}
+
+impl fmt::Display for Weather {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}{}",
+            self.intensity,
+            self.conditions
+                .iter()
+                .map(ToString::to_string)
+                .collect::<String>()
+        )
+    }
 }
 
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -193,8 +364,19 @@ pub enum WeatherIntensity {
     Heavy,
     /// In the vicinity (VC)
     InVicinity,
-    /// Recent (RE)
-    Recent,
+    // /// Recent (RE)
+    // Recent,
+}
+
+impl fmt::Display for WeatherIntensity {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            WeatherIntensity::Light => "-",
+            WeatherIntensity::Moderate => "",
+            WeatherIntensity::Heavy => "+",
+            WeatherIntensity::InVicinity => "VC",
+        })
+    }
 }
 
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -262,6 +444,43 @@ pub enum WeatherCondition {
     FunnelCloud,
 }
 
+impl fmt::Display for WeatherCondition {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            WeatherCondition::Shallow => "MI",
+            WeatherCondition::Partial => "PR",
+            WeatherCondition::Patches => "BC",
+            WeatherCondition::LowDrifting => "DR",
+            WeatherCondition::Blowing => "BL",
+            WeatherCondition::Showers => "SH",
+            WeatherCondition::Thunderstorm => "TS",
+            WeatherCondition::Freezing => "FZ",
+            WeatherCondition::Rain => "RA",
+            WeatherCondition::Drizzle => "DZ",
+            WeatherCondition::Snow => "SN",
+            WeatherCondition::SnowGrains => "SG",
+            WeatherCondition::IceCrystals => "IC",
+            WeatherCondition::IcePellets => "PL",
+            WeatherCondition::Hail => "GR",
+            WeatherCondition::SnowPelletsOrSmallHail => "GS",
+            WeatherCondition::UnknownPrecipitation => "UP",
+            WeatherCondition::Fog => "FG",
+            WeatherCondition::VolcanicAsh => "VA",
+            WeatherCondition::Mist => "BR",
+            WeatherCondition::Haze => "HZ",
+            WeatherCondition::WidespreadDust => "DU",
+            WeatherCondition::Smoke => "FU",
+            WeatherCondition::Sand => "SA",
+            WeatherCondition::Spray => "PY",
+            WeatherCondition::Squall => "SQ",
+            WeatherCondition::Dust => "PO",
+            WeatherCondition::Duststorm => "DS",
+            WeatherCondition::Sandstorm => "SS",
+            WeatherCondition::FunnelCloud => "FC",
+        })
+    }
+}
+
 #[derive(PartialEq, Eq, Clone, Debug)]
 /// Wind information.
 pub struct Wind {
@@ -279,19 +498,89 @@ pub struct Wind {
 
 impl fmt::Display for Wind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.dir.fmt(f)?;
+        f.write_str(&self.dir.to_opt_string(3))?;
         f.write_str(
             &self
                 .speed
                 .as_option()
-                .map_or("//".to_string(), |v| format!("{v:02}")),
+                .map_or("//".to_string(), |v| format!("{v:0>2}")),
         )?;
         if let Some(gusts) = self.gusting {
             write!(f, "G{gusts}")?;
         }
         write!(f, "{}", self.unit)?;
         if let Some((from, to)) = self.varying {
-            write!(f, " {from:03}V{to:03}")?
+            write!(f, " {from:0>3}V{to:0>3}")?
+        }
+
+        Ok(())
+    }
+}
+
+#[derive(PartialEq, Clone, Debug)]
+/// Trend of weather
+pub enum Trend {
+    /// No significant change
+    NoSignificantChange,
+    /// Temporarily changing for less than an hour
+    Temporarily(WeatherChangeConditions),
+    /// A permanent change in the weather conditions
+    Becoming(WeatherChangeConditions),
+}
+
+impl fmt::Display for Trend {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Trend::NoSignificantChange => f.write_str("NOSIG"),
+            Trend::Temporarily(wx) => write!(f, "TEMPO{wx}"),
+            Trend::Becoming(wx) => write!(f, "BECMG{wx}"),
+        }
+    }
+}
+
+#[derive(PartialEq, Debug, Clone, Default)]
+/// Conditions the weather will change to
+pub struct WeatherChangeConditions {
+    /// If there will be no significant weather
+    pub no_significant_weather: bool,
+    /// The wind information the weather will change to
+    pub wind: Option<Wind>,
+    /// The visibility information the weather will change to
+    pub visibility: Option<Visibility>,
+    /// The cloud information the weather will change to
+    pub clouds: Option<Clouds>,
+    /// The weather phenomena the conditions will change to
+    pub weather: Vec<Weather>,
+}
+
+impl fmt::Display for WeatherChangeConditions {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.no_significant_weather {
+            f.write_str(" NSW")?;
+        }
+        if let Some(wind) = &self.wind {
+            write!(f, " {wind}")?;
+        }
+        if let Some(vis) = &self.visibility {
+            write!(f, " {vis}")?;
+        }
+        if let Some(clouds) = &self.clouds {
+            let val = clouds.to_string();
+            if !val.is_empty() {
+                f.write_str(" ")?;
+                f.write_str(&val)?;
+            }
+        }
+        if !self.weather.is_empty() {
+            write!(
+                f,
+                " {}",
+                self.weather
+                    .iter()
+                    .map(ToString::to_string)
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            )?;
         }
 
         Ok(())

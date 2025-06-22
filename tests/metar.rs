@@ -49,11 +49,15 @@ fn test_display() {
     let metar = Metar::parse(metar_str).unwrap();
     assert_eq!(metar_str, metar.to_string());
 
-    // let metar_str = "ETSN 242120Z 30004KT 9999 FEW330 19/12 Q1016 BLU+";
-    // let metar = Metar::parse(metar_str).unwrap();
-    // assert_eq!(metar_str, metar.to_string());
+    let metar_str = "ETSN 242120Z 30004KT 9999 FEW330 19/12 Q1016 BLU+";
+    let metar = Metar::parse(metar_str).unwrap();
+    assert_eq!(metar_str, metar.to_string());
 
-    // let metar_str = "ETSI 242120Z AUTO 22001KT //// // ////// 19/13 Q1015 ///";
-    // let metar = Metar::parse(metar_str).unwrap();
-    // assert_eq!(metar_str, metar.to_string());
+    let metar_str = "ETSI 242120Z AUTO 22001KT //// // ////// 19/13 Q1015 ///";
+    let metar = Metar::parse(metar_str).unwrap();
+    assert_eq!(metar_str, metar.to_string());
+
+    let metar_str = "ETSI 211120Z 27004KT 9999 FEW030 BKN100 21/13 Q1007 BLU BLU TEMPO WHT";
+    let metar = Metar::parse(metar_str).unwrap();
+    assert_eq!(metar_str, metar.to_string());
 }

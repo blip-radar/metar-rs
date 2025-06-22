@@ -65,8 +65,10 @@ impl<'i> From<Pair<'i, Rule>> for Metar {
             // Unknown QNH is Q////, i.e. handled below, inHg is simply omitted so handled here
             pressure: Pressure::InchesOfMercury(Unknown),
             recent_weather: None,
-            remarks: None,
             trend: vec![],
+            colour_code: None,
+            colour_code_trend: None,
+            remarks: None,
         };
 
         assert_eq!(pair.as_rule(), Rule::metar);
@@ -127,7 +129,18 @@ impl<'i> From<Pair<'i, Rule>> for Metar {
                     }
                 }
                 Rule::remarks => metar.remarks = Some(part.as_str().to_owned()),
-                _ => (),
+                Rule::colour_code => {
+                    if metar.colour_code.is_some() {
+                        metar.colour_code_trend =
+                            Some(ColourCode::from(part.into_inner().next().unwrap()))
+                    } else {
+                        metar.colour_code = Some(part.into())
+                    }
+                }
+                // TODO
+                Rule::windshear | Rule::runway_state | Rule::cloud_direction => (),
+                Rule::EOI => (),
+                rule => unreachable!("{rule:?}"),
             }
         }
 
@@ -240,7 +253,7 @@ impl<'i> From<Pair<'i, Rule>> for Time {
                 Rule::observation_day => time.date = part.as_str().parse().unwrap(),
                 Rule::observation_hour => time.hour = part.as_str().parse().unwrap(),
                 Rule::observation_minute => time.minute = part.as_str().parse().unwrap(),
-                _ => (),
+                rule => unreachable!("{rule:?}"),
             }
         }
         time
@@ -469,6 +482,10 @@ impl<'i> From<Pair<'i, Rule>> for WeatherChangeConditions {
                         wind.varying = Some((from, to));
                     }
                 }
+                Rule::colour_code => {
+                    wx_change.colour_code =
+                        Some(ColourCode::from(part.into_inner().next().unwrap()))
+                }
                 Rule::atmos_condition => {
                     let atmos = AtmosphericConditions::from(part);
                     wx_change.visibility = atmos.visibility.into_option();
@@ -528,6 +545,39 @@ impl<'i> From<Pair<'i, Rule>> for RvrValue {
             "P" => Self::GreaterThan(val[1..].parse().unwrap()),
             "M" => Self::LessThan(val[1..].parse().unwrap()),
             _ => Self::Exactly(val.parse().unwrap()),
+        }
+    }
+}
+
+impl<'i> From<Pair<'i, Rule>> for ColourCode {
+    fn from(pair: Pair<'i, Rule>) -> Self {
+        match pair.as_rule() {
+            Rule::colour_code_blue_plus => ColourCode::BluePlus,
+            Rule::colour_code_blue => ColourCode::Blue,
+            Rule::colour_code_white => ColourCode::White,
+            Rule::colour_code_green => ColourCode::Green,
+            Rule::colour_code_yellow => ColourCode::Yellow,
+            Rule::colour_code_amber => ColourCode::Amber,
+            Rule::colour_code_red => ColourCode::Red,
+            rule => unreachable!("{rule:?}"),
+        }
+    }
+}
+
+impl<'i> From<Pair<'i, Rule>> for Data<ColourCode> {
+    fn from(pair: Pair<'i, Rule>) -> Self {
+        assert_eq!(pair.as_rule(), Rule::colour_code);
+        let colour_code = pair.into_inner().next().unwrap();
+        match colour_code.as_rule() {
+            Rule::colour_code_unknown => Data::Unknown,
+            Rule::colour_code_blue_plus
+            | Rule::colour_code_blue
+            | Rule::colour_code_white
+            | Rule::colour_code_green
+            | Rule::colour_code_yellow
+            | Rule::colour_code_amber
+            | Rule::colour_code_red => Data::Known(ColourCode::from(colour_code)),
+            rule => unreachable!("{rule:?}"),
         }
     }
 }

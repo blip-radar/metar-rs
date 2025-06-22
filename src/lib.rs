@@ -59,6 +59,10 @@ pub struct Metar {
     pub recent_weather: Option<Vec<WeatherCondition>>,
     /// Remarks added on to the METAR
     pub remarks: Option<String>,
+    /// Military weather colour code
+    pub colour_code: Option<Data<ColourCode>>,
+    /// Military weather colour code trend
+    pub colour_code_trend: Option<ColourCode>,
     /// The trend
     pub trend: Vec<Trend>,
 }
@@ -166,6 +170,14 @@ impl fmt::Display for Metar {
                 " RE{}",
                 recent.iter().map(ToString::to_string).collect::<String>()
             )?;
+        }
+
+        if let Some(colour) = &self.colour_code {
+            write!(f, " {}", colour.to_opt_string(3))?;
+        }
+
+        if let Some(colour_code_trend) = &self.colour_code_trend {
+            write!(f, " {colour_code_trend}")?;
         }
 
         for trend in &self.trend {

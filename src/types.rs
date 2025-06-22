@@ -549,6 +549,8 @@ pub struct WeatherChangeConditions {
     pub visibility: Option<Visibility>,
     /// The cloud information the weather will change to
     pub clouds: Option<Clouds>,
+    /// The military weather colour code
+    pub colour_code: Option<ColourCode>,
     /// The weather phenomena the conditions will change to
     pub weather: Vec<Weather>,
 }
@@ -582,7 +584,42 @@ impl fmt::Display for WeatherChangeConditions {
                     .join(" ")
             )?;
         }
+        if let Some(colour_code) = &self.colour_code {
+            write!(f, " {colour_code}")?;
+        }
 
         Ok(())
+    }
+}
+#[derive(PartialEq, Debug, Clone)]
+/// Military weather colour code
+pub enum ColourCode {
+    /// BLU+: visibility>=8000m, ceiling >=20000ft
+    BluePlus,
+    /// BLU: visibility>=8000m, ceiling 2500-20000ft
+    Blue,
+    /// WHT: visibility 5000-8000m, ceiling 1500-2500ft
+    White,
+    /// GRN: visibility 3700-5000m, ceiling 700-1500ft
+    Green,
+    /// YLO: visibility 1600-3700m, ceiling 300-700ft
+    Yellow,
+    /// AMB: visibility 800-1600m, ceiling 200-300ft
+    Amber,
+    /// RED: visibility <800m, ceiling <200ft
+    Red,
+}
+
+impl fmt::Display for ColourCode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            ColourCode::BluePlus => "BLU+",
+            ColourCode::Blue => "BLU",
+            ColourCode::White => "WHT",
+            ColourCode::Green => "GRN",
+            ColourCode::Yellow => "YLO",
+            ColourCode::Amber => "AMB",
+            ColourCode::Red => "RED",
+        })
     }
 }

@@ -11,8 +11,9 @@ metar = {
     recents? ~
     windshear* ~
     runway_state* ~
-    trend* ~
     cloud_direction* ~
+    (colour_code ~ colour_code?)? ~
+    trend* ~
     remarks? ~
     "="? ~
     EOI
@@ -245,12 +246,25 @@ wx_change_time = @{
 }
 
 wx_change_conditions = {
-    no_significant_weather? ~ (wind ~ wind_varying?)? ~ atmos_condition
+    no_significant_weather? ~ (wind ~ wind_varying?)? ~ colour_code? ~ atmos_condition
 }
 
 cloud_direction = ${
     cloud_type ~ ("/" ~ compass_direction)+
 }
+
+colour_code = {
+   colour_code_blue_plus | colour_code_blue | colour_code_white | colour_code_green
+   | colour_code_yellow | colour_code_amber | colour_code_red | colour_code_unknown
+}
+colour_code_blue_plus = @{ "BLU+" }
+colour_code_blue = @{ "BLU" }
+colour_code_white = @{ "WHT" }
+colour_code_green = @{ "GRN" }
+colour_code_yellow = @{ "YLO" }
+colour_code_amber = @{ "AMB" }
+colour_code_red = @{ "RED" }
+colour_code_unknown = @{ "///" }
 
 remarks = {
     "RMK" ~

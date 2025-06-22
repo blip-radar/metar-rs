@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[derive(PartialEq, Eq, Clone, Debug, Hash)]
 /// Data that is provided in a metar which might be unknown.
 /// Note that this differs from an `Option<T>` field which is used when data
@@ -38,6 +40,12 @@ pub struct Time {
     pub hour: u8,
     /// The minute the METAR was made
     pub minute: u8,
+}
+
+impl fmt::Display for Time {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:02}{:02}{:02}Z", self.date, self.hour, self.minute)
+    }
 }
 
 #[derive(PartialEq, Eq, Clone, Debug, Hash)]

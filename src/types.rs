@@ -218,7 +218,7 @@ impl fmt::Display for Pressure {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Pressure::Hectopascals(hpa) => write!(f, "Q{:0>4}", hpa.to_opt_string(4)),
-            Pressure::InchesOfMercury(Data::Known(inhg)) => write!(f, "{:04.0}", inhg * 100.0),
+            Pressure::InchesOfMercury(Data::Known(inhg)) => write!(f, "A{:04.0}", inhg * 100.0),
             Pressure::InchesOfMercury(Data::Unknown) => Ok(()),
         }
     }

@@ -48,7 +48,6 @@ method = @{
 }
 
 wind = ${
-    "CALM" |
     (wind_dir ~
     wind_speed ~
     wind_gusts? ~ wind_unit)

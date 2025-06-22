@@ -49,38 +49,51 @@ impl fmt::Display for Time {
 }
 
 #[derive(PartialEq, Eq, Clone, Debug, Hash)]
-/// The wind speed
-pub enum WindSpeed {
-    /// Winds calm
-    Calm,
-    /// Nautical miles per hour
-    Knot(u32),
-    /// Metres per second
-    MetresPerSecond(u32),
-    /// Kilometres per hour
-    KilometresPerHour(u32),
-}
-
-impl WindSpeed {
-    pub(crate) fn clone_changing_contents(&self, new_contents: u32) -> Self {
-        match self {
-            WindSpeed::Calm => WindSpeed::Calm,
-            WindSpeed::Knot(_) => WindSpeed::Knot(new_contents),
-            WindSpeed::MetresPerSecond(_) => WindSpeed::MetresPerSecond(new_contents),
-            WindSpeed::KilometresPerHour(_) => WindSpeed::KilometresPerHour(new_contents),
-        }
-    }
-}
-
-#[derive(PartialEq, Eq, Clone, Debug, Hash)]
 /// A representation of wind direction
 pub enum WindDirection {
     /// A heading defining wind direction
     Heading(u32),
     /// Wind direction is variable
     Variable,
-    /// Wind speed is above 49mps or 99kt
-    Above,
+}
+
+impl fmt::Display for WindDirection {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            WindDirection::Heading(h) => write!(f, "{h:03}"),
+            WindDirection::Variable => f.write_str("VRB"),
+        }
+    }
+}
+
+impl fmt::Display for Data<WindDirection> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Data::Known(w) => w.fmt(f),
+            Data::Unknown => f.write_str("///"),
+        }
+    }
+}
+
+#[derive(PartialEq, Eq, Clone, Debug, Hash)]
+/// A representation of the wind unit
+pub enum WindUnit {
+    /// Nautical miles per hour
+    Knots,
+    /// Kilometres per hour
+    KilometresPerHour,
+    /// Metres per second
+    MetresPerSecond,
+}
+
+impl fmt::Display for WindUnit {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            WindUnit::Knots => "KT",
+            WindUnit::KilometresPerHour => "KPH",
+            WindUnit::MetresPerSecond => "MPS",
+        })
+    }
 }
 
 #[derive(PartialEq, Clone, Debug)]
@@ -247,9 +260,32 @@ pub struct Wind {
     /// The wind direction, in degrees
     pub dir: Data<WindDirection>,
     /// The current wind speed
-    pub speed: Data<WindSpeed>,
+    pub speed: Data<u32>,
     /// The direction the wind may be varying between, smaller always comes first
     pub varying: Option<(u32, u32)>,
     /// The gusting speed of the wind
-    pub gusting: Option<WindSpeed>,
+    pub gusting: Option<u32>,
+    /// The unit of the wind
+    pub unit: WindUnit,
+}
+
+impl fmt::Display for Wind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.dir.fmt(f)?;
+        f.write_str(
+            &self
+                .speed
+                .as_option()
+                .map_or("//".to_string(), |v| format!("{v:02}")),
+        )?;
+        if let Some(gusts) = self.gusting {
+            write!(f, "G{gusts}")?;
+        }
+        write!(f, "{}", self.unit)?;
+        if let Some((from, to)) = self.varying {
+            write!(f, " {from:03}V{to:03}")?
+        }
+
+        Ok(())
+    }
 }

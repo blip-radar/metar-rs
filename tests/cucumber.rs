@@ -1,5 +1,5 @@
 use cucumber::{then, when, World as _};
-use metar::{Data, Metar, MetarError, Pressure, Visibility, WindDirection, WindSpeed};
+use metar::{Data, Metar, MetarError, Pressure, Visibility, WindDirection, WindUnit};
 
 #[derive(cucumber::World, Debug, Default)]
 struct World {
@@ -94,19 +94,21 @@ fn wind_not_varying(_w: &mut World) {}
 #[then(expr = "the wind speed is {int} kt")]
 fn check_wind_spd_knots(w: &mut World, spd: u32) {
     let metar = w.metar();
-    assert_eq!(&WindSpeed::Knot(spd), metar.wind.speed.unwrap())
+    assert_eq!(&spd, metar.wind.speed.unwrap());
+    assert_eq!(WindUnit::Knots, metar.wind.unit);
 }
 
 #[then(expr = "the wind speed is {int} mps")]
 fn check_wind_spd_mps(w: &mut World, spd: u32) {
     let metar = w.metar();
-    assert_eq!(&WindSpeed::MetresPerSecond(spd), metar.wind.speed.unwrap())
+    assert_eq!(&spd, metar.wind.speed.unwrap());
+    assert_eq!(WindUnit::MetresPerSecond, metar.wind.unit);
 }
 
 #[then(expr = "the wind is gusting to {int} kt")]
 fn check_wind_gusting_knots(w: &mut World, spd: u32) {
     let metar = w.metar();
-    assert_eq!(&WindSpeed::Knot(spd), metar.wind.gusting.as_ref().unwrap())
+    assert_eq!(spd, metar.wind.gusting.unwrap());
 }
 
 #[then(expr = "the wind is gusting to none")]

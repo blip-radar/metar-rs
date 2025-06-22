@@ -51,6 +51,7 @@ impl<'i> From<Pair<'i, Rule>> for Metar {
                 speed: Unknown,
                 varying: None,
                 gusting: None,
+                unit: WindUnit::Knots,
             },
             visibility: Unknown,
             clouds: Known(Clouds::NoCloudDetected),
@@ -210,19 +211,12 @@ impl<'i> From<Pair<'i, Rule>> for Wind {
         let mut wind = Wind {
             dir: Unknown,
             speed: Unknown,
+            unit: WindUnit::Knots,
             varying: None,
             gusting: None,
         };
         assert_eq!(pair.as_rule(), Rule::wind);
 
-        if pair.as_str() == "CALM" {
-            wind.speed = Known(WindSpeed::Calm);
-            return wind;
-        }
-
-        let mut speed = None;
-        let mut gusting = None;
-        let mut unit = None;
         for part in pair.into_inner() {
             match part.as_rule() {
                 Rule::wind_dir => {
@@ -240,29 +234,22 @@ impl<'i> From<Pair<'i, Rule>> for Wind {
                     if s.starts_with('P') {
                         s = &s[1..];
                     }
-                    speed = Some(s.parse().unwrap());
+                    wind.speed = Known(s.parse().unwrap());
                 }
                 Rule::wind_gusts => {
-                    gusting = Some(part.as_str()[1..].parse().unwrap());
+                    wind.gusting = Some(part.as_str()[1..].parse().unwrap());
                 }
                 Rule::wind_unit => {
                     let unit_s = part.as_str();
-                    unit = match unit_s {
-                        "KT" => Some(WindSpeed::Knot(0)),
-                        "KPH" => Some(WindSpeed::KilometresPerHour(0)),
-                        "MPS" => Some(WindSpeed::MetresPerSecond(0)),
+                    wind.unit = match unit_s {
+                        "KT" => WindUnit::Knots,
+                        "KPH" => WindUnit::KilometresPerHour,
+                        "MPS" => WindUnit::MetresPerSecond,
                         _ => unreachable!(),
                     }
                 }
                 _ => (),
             }
-        }
-
-        if let Some(spd) = speed {
-            wind.speed = Known(unit.clone().unwrap().clone_changing_contents(spd));
-        }
-        if let Some(gust) = gusting {
-            wind.gusting = unit.map(|u| u.clone_changing_contents(gust));
         }
 
         wind

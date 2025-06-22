@@ -49,6 +49,10 @@ fn test_display() {
     let metar = Metar::parse(metar_str).unwrap();
     assert_eq!(metar_str, metar.to_string());
 
+    let metar_str = "EDDM 161650Z AUTO 31007KT 290V350 9999 SHRA BKN046 FEW///TCU 19/15 Q1013 TEMPO FM1700 30020G30KT 4000 SHRA SCT020 BKN040CB";
+    let metar = Metar::parse(metar_str).unwrap();
+    assert_eq!(metar_str, metar.to_string());
+
     let metar_str = "ETSN 242120Z 30004KT 9999 FEW330 19/12 Q1016 BLU+";
     let metar = Metar::parse(metar_str).unwrap();
     assert_eq!(metar_str, metar.to_string());

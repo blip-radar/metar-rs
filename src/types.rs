@@ -571,13 +571,6 @@ impl fmt::Display for WeatherChangeConditions {
         if let Some(vis) = &self.visibility {
             write!(f, " {vis}")?;
         }
-        if let Some(clouds) = &self.clouds {
-            let val = clouds.to_string();
-            if !val.is_empty() {
-                f.write_str(" ")?;
-                f.write_str(&val)?;
-            }
-        }
         if !self.weather.is_empty() {
             write!(
                 f,
@@ -588,6 +581,13 @@ impl fmt::Display for WeatherChangeConditions {
                     .collect::<Vec<_>>()
                     .join(" ")
             )?;
+        }
+        if let Some(clouds) = &self.clouds {
+            let val = clouds.to_string();
+            if !val.is_empty() {
+                f.write_str(" ")?;
+                f.write_str(&val)?;
+            }
         }
         if let Some(colour_code) = &self.colour_code {
             write!(f, " {colour_code}")?;

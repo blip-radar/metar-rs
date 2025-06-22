@@ -46,6 +46,7 @@ impl<'i> From<Pair<'i, Rule>> for Metar {
                 hour: 0,
                 minute: 0,
             },
+            is_auto: false,
             wind: Wind {
                 dir: Unknown,
                 speed: Unknown,
@@ -69,6 +70,7 @@ impl<'i> From<Pair<'i, Rule>> for Metar {
             match part.as_rule() {
                 Rule::station => metar.station = part.as_str().to_owned(),
                 Rule::observation_time => metar.time = Time::from(part),
+                Rule::auto => metar.is_auto = true,
                 Rule::wind => metar.wind = Wind::from(part),
                 Rule::wind_varying => {
                     let mut hdgs = part.into_inner();

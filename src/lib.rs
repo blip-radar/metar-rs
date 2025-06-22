@@ -33,6 +33,8 @@ pub struct Metar {
     pub station: String,
     /// The measurement time
     pub time: Time,
+    /// If the measurement was generated automatically
+    pub is_auto: bool,
     /// The current wind information
     pub wind: Wind,
     /// The current visibility

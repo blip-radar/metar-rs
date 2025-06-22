@@ -2,18 +2,19 @@ metar = {
     SOI ~
     station ~
     observation_time ~
-    (method)? ~
-    (wind)? ~
-    (wind_varying)? ~
-    (atmos_condition)? ~
-    (temperatures)? ~
-    (pressure)? ~
-    (recents)? ~
-    (windshear)* ~
-    (runway_state)* ~
-    (trend)* ~
-    (cloud_direction)* ~
-    (remarks)? ~
+    corrected? ~
+    auto? ~
+    wind? ~
+    wind_varying? ~
+    atmos_condition? ~
+    temperatures? ~
+    pressure? ~
+    recents? ~
+    windshear* ~
+    runway_state* ~
+    trend* ~
+    cloud_direction* ~
+    remarks? ~
     "="? ~
     EOI
 }
@@ -43,9 +44,8 @@ observation_minute = @{
     ('0'..'5') ~ ASCII_DIGIT
 }
 
-method = @{
-    "AUTO" | "COR"
-}
+corrected = @{ "COR" }
+auto = @{ "AUTO" }
 
 wind = ${
     (wind_dir ~

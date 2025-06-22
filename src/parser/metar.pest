@@ -20,7 +20,7 @@ metar = {
 }
 
 station = @{
-    ASCII_ALPHA_UPPER{4}
+    ASCII_ALPHA_UPPER{4} | (ASCII_ALPHA_UPPER ~ (ASCII_DIGIT | ASCII_ALPHA_UPPER){3})
 }
 
 observation_time = ${

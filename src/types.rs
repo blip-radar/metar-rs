@@ -541,6 +541,8 @@ impl fmt::Display for Trend {
 #[derive(PartialEq, Debug, Clone, Default)]
 /// Conditions the weather will change to
 pub struct WeatherChangeConditions {
+    /// When the change will occur
+    pub weather_change_time: Option<WeatherChangeTime>,
     /// If there will be no significant weather
     pub no_significant_weather: bool,
     /// The wind information the weather will change to
@@ -557,6 +559,9 @@ pub struct WeatherChangeConditions {
 
 impl fmt::Display for WeatherChangeConditions {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Some(time) = &self.weather_change_time {
+            write!(f, " {time}")?;
+        }
         if self.no_significant_weather {
             f.write_str(" NSW")?;
         }
@@ -591,6 +596,28 @@ impl fmt::Display for WeatherChangeConditions {
         Ok(())
     }
 }
+
+#[derive(PartialEq, Debug, Clone)]
+/// When the weather will change
+pub enum WeatherChangeTime {
+    /// From when the changed weather will be valid
+    From(u16),
+    /// Until when the changed weather will be valid
+    Till(u16),
+    /// When the changed weather will be valid
+    At(u16),
+}
+
+impl fmt::Display for WeatherChangeTime {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            WeatherChangeTime::From(time) => write!(f, "FM{time:04}"),
+            WeatherChangeTime::Till(time) => write!(f, "TL{time:04}"),
+            WeatherChangeTime::At(time) => write!(f, "AT{time:04}"),
+        }
+    }
+}
+
 #[derive(PartialEq, Debug, Clone)]
 /// Military weather colour code
 pub enum ColourCode {

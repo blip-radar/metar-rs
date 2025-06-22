@@ -231,19 +231,23 @@ no_significant_change = @{
     "NOSIG"
 }
 becoming = {
-    "BECMG" ~ wx_change_time? ~ wx_change_conditions
+    "BECMG" ~ wx_change? ~ wx_change_conditions
 }
 tempo = {
-    "TEMPO" ~ wx_change_time? ~ wx_change_conditions
+    "TEMPO" ~ wx_change? ~ wx_change_conditions
 }
 
 no_significant_weather = @{
     "NSW"
 }
 
-wx_change_time = @{
-    ("FM" | "TL" | "AT") ~ ASCII_DIGIT{4}
+wx_change = ${
+    (wx_change_from | wx_change_till | wx_change_at) ~ wx_change_time
 }
+wx_change_from = @{"FM"}
+wx_change_till = @{"TL"}
+wx_change_at = @{"AT"}
+wx_change_time = @{ ASCII_DIGIT{4} }
 
 wx_change_conditions = {
     no_significant_weather? ~ (wind ~ wind_varying?)? ~ colour_code? ~ atmos_condition

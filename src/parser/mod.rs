@@ -441,27 +441,45 @@ impl<'i> From<Pair<'i, Rule>> for Trend {
             Rule::tempo => {
                 let mut tempo = pair.into_inner();
                 let time_or_change = tempo.next().unwrap();
-                let wx_change = if let Rule::wx_change_time = time_or_change.as_rule() {
-                    // TODO parse change time
-                    tempo.next().unwrap()
+                let wx = if let Rule::wx_change = time_or_change.as_rule() {
+                    let time = WeatherChangeTime::from(time_or_change);
+                    let mut wx_change = WeatherChangeConditions::from(tempo.next().unwrap());
+                    wx_change.weather_change_time = Some(time);
+                    wx_change
                 } else {
-                    time_or_change
+                    WeatherChangeConditions::from(time_or_change)
                 };
 
-                Trend::Temporarily(WeatherChangeConditions::from(wx_change))
+                Trend::Temporarily(wx)
             }
             Rule::becoming => {
                 let mut becoming = pair.into_inner();
                 let time_or_change = becoming.next().unwrap();
-                let wx_change = if let Rule::wx_change_time = time_or_change.as_rule() {
-                    // TODO parse change time
-                    becoming.next().unwrap()
+                let wx = if let Rule::wx_change = time_or_change.as_rule() {
+                    let time = WeatherChangeTime::from(time_or_change);
+                    let mut wx_change = WeatherChangeConditions::from(becoming.next().unwrap());
+                    wx_change.weather_change_time = Some(time);
+                    wx_change
                 } else {
-                    time_or_change
+                    WeatherChangeConditions::from(time_or_change)
                 };
 
-                Trend::Becoming(WeatherChangeConditions::from(wx_change))
+                Trend::Becoming(wx)
             }
+            rule => unreachable!("{rule:?}"),
+        }
+    }
+}
+
+impl<'i> From<Pair<'i, Rule>> for WeatherChangeTime {
+    fn from(pair: Pair<'i, Rule>) -> Self {
+        let mut weather_change_time = pair.into_inner();
+        let wx_change_type = weather_change_time.next().unwrap();
+        let wx_change_time = weather_change_time.next().unwrap();
+        match wx_change_type.as_rule() {
+            Rule::wx_change_from => Self::From(wx_change_time.as_str().parse().unwrap()),
+            Rule::wx_change_till => Self::Till(wx_change_time.as_str().parse().unwrap()),
+            Rule::wx_change_at => Self::At(wx_change_time.as_str().parse().unwrap()),
             rule => unreachable!("{rule:?}"),
         }
     }

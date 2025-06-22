@@ -232,6 +232,8 @@ impl<'i> From<Pair<'i, Rule>> for AtmosphericConditions {
                         }
                     }
                     Rule::rvr => res.rvr.push(RunwayVisualRange::from(c)),
+                    // TODO
+                    Rule::no_directional_variation | Rule::restricted_visibility_horizontal => (),
                     rule => unreachable!("{rule:?}"),
                 }
             }

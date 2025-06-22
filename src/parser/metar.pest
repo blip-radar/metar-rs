@@ -80,7 +80,7 @@ wind_varying = ${
 atmos_condition = {
     "CAVOK" |
     "SKC" |
-    ((visibility_horizontal)? ~
+    ((visibility_horizontal ~ no_directional_variation?)? ~
      restricted_visibility_horizontal* ~
      rvr* ~
      ("SKC" | "CLR" |
@@ -104,6 +104,7 @@ compass_direction = _{
 restricted_visibility_horizontal = ${
     visibility_horizontal ~ compass_direction
 }
+no_directional_variation = @{ "NDV" }
 
 visibility_vertical = @{
     "VV" ~ ("///" | ASCII_DIGIT{3})

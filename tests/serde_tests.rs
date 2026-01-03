@@ -1,7 +1,6 @@
 #[cfg(feature = "serde")]
 mod serde_tests {
     use metar::{CloudDensity, Metar};
-    use serde_json;
 
     #[test]
     fn test_metar_serialize_deserialize() {

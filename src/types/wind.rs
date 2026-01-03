@@ -1,3 +1,6 @@
+use std::fmt::Display;
+use std::fmt::Formatter;
+
 use chumsky::prelude::*;
 
 use crate::parsers::some_whitespace;
@@ -46,5 +49,31 @@ impl Parsable for Wind {
                 varying,
             }),
         ))
+    }
+}
+
+impl Display for Wind {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Wind::Calm => f.write_str("CALM"),
+            Wind::Present {
+                dir,
+                speed,
+                varying,
+            } => {
+                dir.fmt(f)?;
+                speed.fmt(f)?;
+                if let Some((from, to)) = varying {
+                    write!(
+                        f,
+                        " {:0>3}V{:0>3}",
+                        from.to_opt_string(3),
+                        to.to_opt_string(3)
+                    )?;
+                }
+
+                Ok(())
+            }
+        }
     }
 }

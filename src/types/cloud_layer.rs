@@ -1,6 +1,8 @@
+use std::fmt::{Display, Formatter};
+
 use chumsky::prelude::*;
 
-use crate::{traits::Parsable, Data};
+use crate::{Data, traits::Parsable};
 
 use super::CloudType;
 
@@ -37,6 +39,14 @@ impl Parsable for CloudLayer {
     }
 }
 
+impl Display for CloudLayer {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.density.to_opt_string(3))?;
+        write!(f, "{:0>3}", self.height.to_opt_string(3))?;
+        write!(f, "{}", self.kind.to_opt_string(3))
+    }
+}
+
 /// The density of the cloud cover
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -59,6 +69,17 @@ impl Parsable for CloudDensity {
             just("BKN").map(|_| CloudDensity::Broken),
             just("OVC").map(|_| CloudDensity::Overcast),
         ))
+    }
+}
+
+impl Display for CloudDensity {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            CloudDensity::Few => "FEW",
+            CloudDensity::Scattered => "SCT",
+            CloudDensity::Broken => "BKN",
+            CloudDensity::Overcast => "OVC",
+        })
     }
 }
 

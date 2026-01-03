@@ -1,6 +1,6 @@
 use chumsky::prelude::*;
 
-use crate::{parsers::runway_number, traits::Parsable, Data};
+use crate::{Data, parsers::runway_number, traits::Parsable};
 
 /// Describes contamination on a runway
 #[derive(PartialEq, Clone, Debug)]

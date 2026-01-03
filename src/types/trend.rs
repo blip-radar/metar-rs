@@ -1,9 +1,11 @@
+use std::fmt::{Display, Formatter};
+
 use chumsky::prelude::*;
 
 use crate::{
+    CloudLayer, VerticalVisibility, Visibility, Weather, Wind,
     parsers::{any_whitespace, some_whitespace},
     traits::Parsable,
-    CloudLayer, VerticalVisibility, Visibility, Weather, Wind,
 };
 
 /// How is the weather expected to change in the near future?
@@ -29,6 +31,17 @@ impl Parsable for Trend {
                 .then(TrendNewCondition::parser())
                 .map(|(_, cond)| Trend::Temporarily(cond)),
         ))
+    }
+}
+
+impl Display for Trend {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Trend::NoSignificantChanges => f.write_str("NOSIG"),
+            Trend::NoSignificantWeather => f.write_str("NSW"),
+            Trend::Becoming(trend) => write!(f, "BECMG{trend}"),
+            Trend::Temporarily(trend) => write!(f, "TEMPO{trend}"),
+        }
     }
 }
 
@@ -92,6 +105,31 @@ impl Parsable for TrendNewCondition {
     }
 }
 
+impl Display for TrendNewCondition {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        for time in &self.time {
+            write!(f, " {time}")?;
+        }
+        if let Some(wind) = self.wind {
+            write!(f, " {wind}")?;
+        }
+        if let Some(vis) = self.visibility {
+            write!(f, " {vis}")?;
+        }
+        for wx in &self.weather {
+            write!(f, " {wx}")?;
+        }
+        for cloud in &self.cloud {
+            write!(f, " {cloud}")?;
+        }
+        if let Some(vv) = self.vertical_visibility {
+            write!(f, " {vv}")?;
+        }
+
+        Ok(())
+    }
+}
+
 /// The time at which conditions change
 #[derive(PartialEq, Debug, Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -117,5 +155,15 @@ impl Parsable for TrendTime {
                 .map(|(_, time)| TrendTime::Until(time)),
             just("AT").then(time).map(|(_, time)| TrendTime::At(time)),
         ))
+    }
+}
+
+impl Display for TrendTime {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TrendTime::From(time) => write!(f, "FM{time:04}"),
+            TrendTime::Until(time) => write!(f, "TL{time:04}"),
+            TrendTime::At(time) => write!(f, "AT{time:04}"),
+        }
     }
 }

@@ -1,3 +1,5 @@
+use std::fmt::{Display, Formatter};
+
 use chumsky::prelude::*;
 
 use crate::traits::Parsable;
@@ -21,6 +23,15 @@ impl Parsable for VerticalVisibility {
                 |(_, digits): (&str, &str)| VerticalVisibility::Distance(digits.parse().unwrap()),
             ),
         ))
+    }
+}
+
+impl Display for VerticalVisibility {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            VerticalVisibility::Distance(vv) => write!(f, "VV{vv:03}"),
+            VerticalVisibility::ReducedByUnknownAmount => f.write_str("VV///"),
+        }
     }
 }
 

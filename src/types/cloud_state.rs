@@ -1,3 +1,5 @@
+use std::fmt::{Display, Formatter};
+
 use chumsky::prelude::*;
 
 use crate::{parsers::some_whitespace, traits::Parsable};
@@ -12,6 +14,16 @@ pub enum Clouds {
     NoSignificantCloud,
     /// Layers of cloud, described elsewhere
     CloudLayers,
+}
+
+impl Display for Clouds {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Clouds::NoCloudDetected => f.write_str("NCD"),
+            Clouds::NoSignificantCloud => f.write_str("NSC"),
+            Clouds::CloudLayers => Ok(()),
+        }
+    }
 }
 
 impl Parsable for Clouds {

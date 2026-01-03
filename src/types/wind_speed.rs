@@ -1,6 +1,8 @@
+use std::fmt::{Display, Formatter};
+
 use chumsky::prelude::*;
 
-use crate::{traits::Parsable, Data, MetarError};
+use crate::{Data, MetarError, traits::Parsable};
 
 /// The wind speed
 #[derive(PartialEq, Eq, Copy, Clone, Debug, Hash)]
@@ -105,6 +107,71 @@ impl Parsable for WindSpeed {
                 }
             }),
         ))
+    }
+}
+
+impl Display for WindSpeed {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            WindSpeed::Knots {
+                speed: Data::Known(speed),
+                gusting,
+            } => {
+                write!(f, "{speed:02}")?;
+                if let Some(gusting) = gusting {
+                    f.write_str("G")?;
+                    if let Data::Known(gusting) = gusting {
+                        write!(f, "{gusting:02}")?;
+                    } else {
+                        f.write_str("//")?;
+                    }
+                }
+                f.write_str("KT")
+            }
+            WindSpeed::Knots {
+                speed: Data::Unknown,
+                gusting: _,
+            } => f.write_str("//KT"),
+            WindSpeed::MetresPerSecond {
+                speed: Data::Known(speed),
+                gusting,
+            } => {
+                write!(f, "{speed:02}")?;
+                if let Some(gusting) = gusting {
+                    f.write_str("G")?;
+                    if let Data::Known(gusting) = gusting {
+                        write!(f, "{gusting:02}")?;
+                    } else {
+                        f.write_str("//")?;
+                    }
+                }
+                f.write_str("MPS")
+            }
+            WindSpeed::MetresPerSecond {
+                speed: Data::Unknown,
+                gusting: _,
+            } => f.write_str("//MPS"),
+            WindSpeed::KilometresPerHour {
+                speed: Data::Known(speed),
+                gusting,
+            } => {
+                write!(f, "{speed:02}")?;
+                if let Some(gusting) = gusting {
+                    f.write_str("G")?;
+                    if let Data::Known(gusting) = gusting {
+                        write!(f, "{gusting:02}")?;
+                    } else {
+                        f.write_str("//")?;
+                    }
+                }
+                f.write_str("KPH")
+            }
+            WindSpeed::KilometresPerHour {
+                speed: Data::Unknown,
+                gusting: _,
+            } => f.write_str("//KPH"),
+            WindSpeed::Greater => f.write_str("P99KT"),
+        }
     }
 }
 

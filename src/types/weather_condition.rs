@@ -1,3 +1,5 @@
+use std::fmt::{Display, Formatter};
+
 use chumsky::prelude::*;
 
 use crate::traits::Parsable;
@@ -105,5 +107,42 @@ impl Parsable for WeatherCondition {
             just("SS").map(|_| WeatherCondition::Sandstorm),
             just("FC").map(|_| WeatherCondition::FunnelCloud),
         )))
+    }
+}
+
+impl Display for WeatherCondition {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            WeatherCondition::Shallow => "MI",
+            WeatherCondition::Partial => "PR",
+            WeatherCondition::Patches => "BC",
+            WeatherCondition::LowDrifting => "DR",
+            WeatherCondition::Blowing => "BL",
+            WeatherCondition::Showers => "SH",
+            WeatherCondition::Thunderstorm => "TS",
+            WeatherCondition::Freezing => "FZ",
+            WeatherCondition::Rain => "RA",
+            WeatherCondition::Drizzle => "DZ",
+            WeatherCondition::Snow => "SN",
+            WeatherCondition::SnowGrains => "SG",
+            WeatherCondition::IceCrystals => "IC",
+            WeatherCondition::IcePellets => "PL",
+            WeatherCondition::Hail => "HR",
+            WeatherCondition::SnowPelletsOrSmallHail => "GS",
+            WeatherCondition::UnknownPrecipitation => "UP",
+            WeatherCondition::Fog => "FG",
+            WeatherCondition::VolcanicAsh => "VA",
+            WeatherCondition::Mist => "BR",
+            WeatherCondition::Haze => "HZ",
+            WeatherCondition::WidespreadDust => "DU",
+            WeatherCondition::Smoke => "FU",
+            WeatherCondition::Sand => "SA",
+            WeatherCondition::Spray => "PY",
+            WeatherCondition::Squall => "SQ",
+            WeatherCondition::Dust => "PO",
+            WeatherCondition::Duststorm => "DS",
+            WeatherCondition::Sandstorm => "SS",
+            WeatherCondition::FunnelCloud => "FC",
+        })
     }
 }

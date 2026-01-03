@@ -1,3 +1,6 @@
+use std::fmt::Display;
+use std::fmt::Formatter;
+
 use chumsky::prelude::*;
 
 use crate::traits::Parsable;
@@ -28,6 +31,17 @@ impl Parsable for Weather {
                 intensity,
                 conditions,
             })
+    }
+}
+
+impl Display for Weather {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.intensity)?;
+        for wx in &self.conditions {
+            write!(f, "{wx}")?;
+        }
+
+        Ok(())
     }
 }
 

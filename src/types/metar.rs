@@ -1,9 +1,11 @@
+use std::fmt::{Display, Formatter};
+
 use crate::{
-    parsers::{any_whitespace, some_whitespace, temperature},
-    traits::Parsable,
     CloudLayer, CloudType, Clouds, ColourCode, CompassDirection, Data, Kind, MetarError, Pressure,
     RunwayCondition, RunwayVisualRange, SeaCondition, Time, Trend, VerticalVisibility, Visibility,
     Weather, WeatherCondition, Wind, WindDirection, WindSpeed, WindshearWarnings,
+    parsers::{any_whitespace, some_whitespace, temperature},
+    traits::Parsable,
 };
 use chumsky::prelude::*;
 
@@ -36,13 +38,13 @@ pub struct Metar {
     /// The current weather conditions
     pub weather: Data<Vec<Weather>>,
     /// The current temperature
-    pub temperature: Data<i32>,
+    pub temperature: Data<f32>,
     /// The current dewpoint
-    pub dewpoint: Data<i32>,
+    pub dewpoint: Data<f32>,
     /// The current air pressure
     pub pressure: Pressure,
     /// Military airport colour code
-    pub colour_code: Option<ColourCode>,
+    pub colour_code: Option<Data<ColourCode>>,
     /// Additional recent weather conditions
     pub recent_weather: Vec<Data<Vec<WeatherCondition>>>,
     /// Windshear warnings
@@ -151,7 +153,7 @@ impl Parsable for Metar {
             Pressure::parser()
                 .then_ignore(some_whitespace())
                 .or(empty().map(|()| Pressure::Hectopascals(Data::Unknown))),
-            ColourCode::parser()
+            Data::<ColourCode>::parser()
                 .map(Some)
                 .then_ignore(some_whitespace())
                 .or(empty().map(|()| None)),
@@ -270,5 +272,108 @@ impl Metar {
                 })
                 .collect::<Vec<_>>()
         })
+    }
+}
+
+impl Display for Metar {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.station)?;
+        f.write_str(" ")?;
+
+        write!(f, "{} ", self.time)?;
+        self.kind.fmt(f)?;
+        write!(f, "{} ", self.wind)?;
+
+        write!(f, "{} ", self.visibility.to_opt_string(4))?;
+
+        for (dir, reduced_vis) in &self.reduced_directional_visibility {
+            if let Some(dir) = dir {
+                write!(f, "{dir}")?;
+            }
+            write!(f, "{} ", reduced_vis.to_opt_string(4))?;
+        }
+
+        for rvr in &self.rvr {
+            write!(f, "{rvr} ")?;
+        }
+
+        match &self.weather {
+            Data::Known(wx) => {
+                let wx_str = wx
+                    .iter()
+                    .map(ToString::to_string)
+                    .collect::<Vec<_>>()
+                    .join(" ");
+                if !wx_str.is_empty() {
+                    write!(f, "{wx_str} ")?;
+                }
+            }
+            Data::Unknown => f.write_str("// ")?,
+        }
+
+        if let Some(vv) = &self.vert_visibility {
+            write!(f, "{vv} ")?;
+        }
+
+        if self.visibility != Data::Known(Visibility::CAVOK) && self.clouds != Clouds::CloudLayers {
+            write!(f, "{} ", self.clouds)?;
+        }
+        for layer in &self.cloud_layers {
+            write!(f, "{layer} ")?;
+        }
+
+        write!(
+            f,
+            "{}{}/{}{}",
+            if let Data::Known(t) = self.temperature
+                && t.is_sign_negative()
+            {
+                "M"
+            } else {
+                ""
+            },
+            self.temperature
+                .map(|temp| format!("{:02.0}", f32::abs(temp)))
+                .to_opt_string(2),
+            if let Data::Known(dp) = self.dewpoint
+                && dp.is_sign_negative()
+            {
+                "M"
+            } else {
+                ""
+            },
+            self.dewpoint
+                .map(|dp| format!("{:02.0}", f32::abs(dp)))
+                .to_opt_string(2)
+        )?;
+
+        write!(f, " {}", self.pressure)?;
+
+        if let Some(colour) = &self.colour_code {
+            write!(f, " {}", colour.to_opt_string(3))?;
+        }
+
+        // if let Some(colour_code_trend) = &self.colour_code_trend {
+        //     write!(f, " {colour_code_trend}")?;
+        // }
+
+        for wx in &self.recent_weather {
+            f.write_str(" RE")?;
+            if let Data::Known(wx_conditions) = wx {
+                for wx_condition in wx_conditions {
+                    write!(f, "{wx_condition}")?;
+                }
+            }
+        }
+
+        for trend in &self.trends {
+            write!(f, " {trend}")?;
+        }
+
+        if let Some(remarks) = &self.remarks {
+            write!(f, " RMK {remarks}")?;
+        }
+
+        Ok(())
     }
 }

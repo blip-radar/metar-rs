@@ -1,6 +1,6 @@
 use std::{borrow::Cow, fmt};
 
-use annotate_snippets::{renderer::DecorStyle, AnnotationKind, Level, Renderer, Snippet};
+use annotate_snippets::{AnnotationKind, Level, Renderer, Snippet, renderer::DecorStyle};
 use chumsky::prelude::*;
 use derive_more::Display;
 

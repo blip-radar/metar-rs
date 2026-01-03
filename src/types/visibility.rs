@@ -1,6 +1,8 @@
+use std::fmt::{self, Display, Formatter};
+
 use chumsky::prelude::*;
 
-use crate::{parsers::some_whitespace, traits::Parsable, Data};
+use crate::{Data, parsers::some_whitespace, traits::Parsable};
 
 #[derive(PartialEq, Copy, Clone, Debug)]
 #[allow(missing_docs, reason = "clear what they are!")]
@@ -32,6 +34,21 @@ impl Parsable for CompassDirection {
     }
 }
 
+impl Display for CompassDirection {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            CompassDirection::North => "N",
+            CompassDirection::NorthEast => "NE",
+            CompassDirection::East => "E",
+            CompassDirection::SouthEast => "SE",
+            CompassDirection::South => "S",
+            CompassDirection::SouthWest => "SW",
+            CompassDirection::West => "W",
+            CompassDirection::NorthWest => "NW",
+        })
+    }
+}
+
 #[derive(PartialEq, Copy, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 /// Horizontal visibility
@@ -45,8 +62,8 @@ pub enum Visibility {
 }
 
 impl Parsable for Visibility {
-    fn parser<'src>(
-    ) -> impl chumsky::Parser<'src, &'src str, Self, chumsky::extra::Err<crate::MetarError<'src>>>
+    fn parser<'src>()
+    -> impl chumsky::Parser<'src, &'src str, Self, chumsky::extra::Err<crate::MetarError<'src>>>
     {
         choice((
             just("CAVOK").map(|_| Visibility::CAVOK),
@@ -114,6 +131,17 @@ impl Parsable for (Option<CompassDirection>, Data<Visibility>) {
             )),
         ))
         .map(|(vis, dir)| (dir, vis))
+    }
+}
+
+impl Display for Visibility {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Visibility::CAVOK => f.write_str("CAVOK"),
+            Visibility::Metres(m) => write!(f, "{m:04}"),
+            // FIXME fractions
+            Visibility::StatuteMiles(sm) => write!(f, "{sm}SM"),
+        }
     }
 }
 

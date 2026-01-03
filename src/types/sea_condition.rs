@@ -1,13 +1,13 @@
 use chumsky::prelude::*;
 
-use crate::{parsers::temperature, traits::Parsable, Data};
+use crate::{Data, parsers::temperature, traits::Parsable};
 
 /// Describes the condition of the sea
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SeaCondition {
     /// Sea temperature
-    pub temperature: Data<i32>,
+    pub temperature: Data<f32>,
     /// Sea condition
     pub condition: Data<SeaConditionInner>,
 }
@@ -100,14 +100,14 @@ mod tests {
         assert_eq!(
             SeaCondition::parse("W15/S2").unwrap(),
             SeaCondition {
-                temperature: Data::Known(15),
+                temperature: Data::Known(15.0),
                 condition: Data::Known(SeaConditionInner::State(Data::Known(SeaState::Smooth))),
             }
         );
         assert_eq!(
             SeaCondition::parse("W15/H123").unwrap(),
             SeaCondition {
-                temperature: Data::Known(15),
+                temperature: Data::Known(15.0),
                 condition: Data::Known(SeaConditionInner::WaveHeight(Data::Known(123))),
             }
         );

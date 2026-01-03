@@ -1,4 +1,6 @@
-use crate::{error::ErrorVariant, traits::Parsable, MetarError};
+use std::fmt::{Display, Formatter};
+
+use crate::{MetarError, error::ErrorVariant, traits::Parsable};
 
 use chumsky::prelude::*;
 
@@ -44,6 +46,12 @@ impl Parsable for Time {
                 Ok(Time { date, hour, minute })
             },
         )
+    }
+}
+
+impl Display for Time {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:02}{:02}{:02}Z", self.date, self.hour, self.minute)
     }
 }
 

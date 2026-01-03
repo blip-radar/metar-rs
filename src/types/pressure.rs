@@ -1,4 +1,6 @@
-use crate::{traits::Parsable, MetarError};
+use std::fmt::{Display, Formatter};
+
+use crate::{MetarError, traits::Parsable};
 
 use super::Data;
 use chumsky::prelude::*;
@@ -28,6 +30,16 @@ impl Parsable for Pressure {
                 .then(Data::parser_inline(4, four_digits))
                 .map(|(_, d)| Pressure::InchesOfMercury(d.map(|v| f32::from(v) / 100.))),
         ))
+    }
+}
+
+impl Display for Pressure {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Pressure::Hectopascals(qnh) => write!(f, "Q{:0>4}", qnh.to_opt_string(4)),
+            Pressure::InchesOfMercury(Data::Known(inhg)) => write!(f, "A{:04.0}", inhg * 100.),
+            Pressure::InchesOfMercury(Data::Unknown) => write!(f, "A////"),
+        }
     }
 }
 

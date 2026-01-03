@@ -2,7 +2,7 @@
 name = "metar"
 version = "0.9.3"
 authors = ["Lily Hopkins <lily@hpkns.uk>"]
-edition = "2021"
+edition = "2024"
 description = "A fast METAR parsing library in pure Rust"
 license = "MIT"
 homepage = "https://github.com/lilopkins/metar-rs"

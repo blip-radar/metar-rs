@@ -1,4 +1,4 @@
-use cucumber::{then, when, World as _};
+use cucumber::{World as _, then, when};
 use metar::{Data, Metar, OwnedMetarError, Pressure, Visibility, Wind, WindDirection, WindSpeed};
 
 #[derive(cucumber::World, Debug, Default)]
@@ -259,8 +259,8 @@ fn check_visibility_unk(w: &mut World) {
     assert_eq!(Data::Unknown, metar.visibility);
 }
 
-#[then(expr = "the temperature is {int}")]
-fn check_temp(w: &mut World, temp: i32) {
+#[then(expr = "the temperature is {float}")]
+fn check_temp(w: &mut World, temp: f32) {
     let metar = w.metar();
     assert_eq!(temp, metar.temperature.unwrap());
 }
@@ -271,8 +271,8 @@ fn check_temp_unk(w: &mut World) {
     assert_eq!(Data::Unknown, metar.temperature);
 }
 
-#[then(expr = "the dewpoint is {int}")]
-fn check_dewp(w: &mut World, dewp: i32) {
+#[then(expr = "the dewpoint is {float}")]
+fn check_dewp(w: &mut World, dewp: f32) {
     let metar = w.metar();
     assert_eq!(dewp, metar.dewpoint.unwrap());
 }

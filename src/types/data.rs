@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use chumsky::prelude::*;
 
 use crate::MetarError;
@@ -68,6 +70,16 @@ impl<T> Data<T> {
             slashes.map(|()| Data::Unknown),
             parser.map(|v| Data::Known(v)),
         ))
+    }
+}
+
+impl<T: Display> Data<T> {
+    /// Returns a String replacing unknown values with n*"/"
+    pub fn to_opt_string(&self, n: usize) -> String {
+        match self {
+            Data::Known(w) => w.to_string(),
+            Data::Unknown => "/".repeat(n),
+        }
     }
 }
 

@@ -1,6 +1,8 @@
+use std::fmt::{Display, Formatter};
+
 use chumsky::prelude::*;
 
-use crate::{traits::Parsable, Data, ErrorVariant, MetarError};
+use crate::{Data, ErrorVariant, MetarError, traits::Parsable};
 
 /// A representation of wind direction
 #[derive(PartialEq, Eq, Copy, Clone, Debug, Hash)]
@@ -39,6 +41,16 @@ impl Parsable for WindDirection {
                     Ok(WindDirection::Heading(Data::Known(hdg)))
                 }),
         ))
+    }
+}
+
+impl Display for WindDirection {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            WindDirection::Heading(Data::Known(dir)) => write!(f, "{dir:03}"),
+            WindDirection::Heading(Data::Unknown) => f.write_str("///"),
+            WindDirection::Variable => f.write_str("VRB"),
+        }
     }
 }
 

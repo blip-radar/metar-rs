@@ -1,3 +1,5 @@
+use std::fmt::{Display, Formatter};
+
 use chumsky::prelude::*;
 
 use crate::traits::Parsable;
@@ -27,5 +29,17 @@ impl Parsable for WeatherIntensity {
             just("RE").map(|_| WeatherIntensity::Recent),
             empty().map(|()| WeatherIntensity::Moderate),
         ))
+    }
+}
+
+impl Display for WeatherIntensity {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            WeatherIntensity::Light => f.write_str("-"),
+            WeatherIntensity::Moderate => Ok(()),
+            WeatherIntensity::Heavy => f.write_str("+"),
+            WeatherIntensity::InVicinity => f.write_str("VC"),
+            WeatherIntensity::Recent => f.write_str("RE"),
+        }
     }
 }

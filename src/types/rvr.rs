@@ -1,6 +1,8 @@
+use std::fmt::{Display, Formatter};
+
 use chumsky::prelude::*;
 
-use crate::{parsers::runway_number, traits::Parsable, Data, ErrorVariant};
+use crate::{Data, ErrorVariant, parsers::runway_number, traits::Parsable};
 
 /// The visibility measured for a specific runway.
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -35,6 +37,23 @@ impl Parsable for RunwayVisualRange {
     }
 }
 
+impl Display for RunwayVisualRange {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "R{}/{}{}",
+            self.runway,
+            self.value.to_opt_string(4),
+            self.unit
+        )?;
+        if let Data::Known(trend) = self.trend {
+            write!(f, "{trend}")?;
+        }
+
+        Ok(())
+    }
+}
+
 /// The visibility value
 #[derive(PartialEq, Eq, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -60,6 +79,15 @@ impl Parsable for RvrValue {
                     RvrValue::Between(iter.next().unwrap(), iter.next().unwrap())
                 }
             })
+    }
+}
+
+impl Display for RvrValue {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            RvrValue::Single(rvr_value_inner) => write!(f, "{rvr_value_inner}"),
+            RvrValue::Between(rvr_lower, rvr_upper) => write!(f, "{rvr_lower}V{rvr_upper}"),
+        }
     }
 }
 
@@ -97,6 +125,16 @@ impl Parsable for RvrValueInner {
     }
 }
 
+impl Display for RvrValueInner {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            RvrValueInner::Exactly(rvr) => write!(f, "{rvr:04}"),
+            RvrValueInner::GreaterThan(rvr) => write!(f, "P{rvr:04}"),
+            RvrValueInner::LessThan(rvr) => write!(f, "M{rvr:04}"),
+        }
+    }
+}
+
 /// The unit of measurement
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -113,6 +151,15 @@ impl Parsable for RvrUnit {
             just("FT").map(|_| RvrUnit::Feet),
             empty().map(|()| RvrUnit::Metres),
         ))
+    }
+}
+
+impl Display for RvrUnit {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            RvrUnit::Metres => Ok(()),
+            RvrUnit::Feet => f.write_str("FT"),
+        }
     }
 }
 
@@ -139,12 +186,31 @@ impl Parsable for RvrTrend {
     }
 }
 
+impl Display for RvrTrend {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            RvrTrend::Upwards => "U",
+            RvrTrend::Downwards => "D",
+            RvrTrend::None => "N",
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_rvr() {
+        assert_eq!(
+            RunwayVisualRange::parse("R27/1600D").unwrap(),
+            RunwayVisualRange {
+                runway: "27".to_string(),
+                value: Data::Known(RvrValue::Single(RvrValueInner::Exactly(1600))),
+                unit: RvrUnit::Metres,
+                trend: Data::Known(RvrTrend::Downwards),
+            }
+        );
         assert_eq!(
             RunwayVisualRange::parse("R24L/P1500").unwrap(),
             RunwayVisualRange {

@@ -1,6 +1,8 @@
+use std::fmt::{Display, Formatter};
+
 use chumsky::prelude::*;
 
-use crate::{traits::Parsable, CompassDirection, Data};
+use crate::{CompassDirection, Data, traits::Parsable};
 
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -35,5 +37,15 @@ impl Parsable for (Vec<CompassDirection>, Data<CloudType>) {
                     .collect::<Vec<_>>(),
             )
             .map(|(typ, dirs)| (dirs, typ))
+    }
+}
+
+impl Display for CloudType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CloudType::Normal => Ok(()),
+            CloudType::Cumulonimbus => f.write_str("CB"),
+            CloudType::ToweringCumulus => f.write_str("TCU"),
+        }
     }
 }

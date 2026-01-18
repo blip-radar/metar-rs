@@ -71,4 +71,8 @@ fn test_display() {
     let metar_str = "ETSB 032220Z AUTO /////KT //// // ////// ///// Q//// ///";
     let metar = Metar::parse(metar_str).unwrap();
     assert_eq!(metar_str, metar.to_string());
+
+    let metar_str = "ETSN 261720Z 32003KT 9999 -RA FEW020 SCT070 BKN090 17/15 Q1014 RERA BLU";
+    let metar = Metar::parse(metar_str).unwrap();
+    assert_eq!(metar_str, metar.to_string());
 }

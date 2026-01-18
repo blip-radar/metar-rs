@@ -153,10 +153,6 @@ impl Parsable for Metar {
             Pressure::parser()
                 .then_ignore(some_whitespace())
                 .or(empty().map(|()| Pressure::Hectopascals(Data::Unknown))),
-            Data::<ColourCode>::parser()
-                .map(Some)
-                .then_ignore(some_whitespace())
-                .or(empty().map(|()| None)),
             choice((
                 just("RE")
                     .then(Data::parser_inline(
@@ -172,6 +168,10 @@ impl Parsable for Metar {
                     .then_ignore(some_whitespace()),
                 empty().map(|()| vec![]),
             )),
+            Data::<ColourCode>::parser()
+                .map(Some)
+                .then_ignore(some_whitespace())
+                .or(empty().map(|()| None)),
             WindshearWarnings::parser()
                 .map(Some)
                 .then_ignore(some_whitespace())
@@ -213,8 +213,8 @@ impl Parsable for Metar {
                 (weather, vert_visibility, clouds, cloud_layers),
                 (temperature, dewpoint),
                 pressure,
-                colour_code,
                 recent_weather,
+                colour_code,
                 windshear_warnings,
                 runway_conditions,
                 sea_condition,
@@ -349,14 +349,6 @@ impl Display for Metar {
 
         write!(f, " {}", self.pressure)?;
 
-        if let Some(colour) = &self.colour_code {
-            write!(f, " {}", colour.to_opt_string(3))?;
-        }
-
-        // if let Some(colour_code_trend) = &self.colour_code_trend {
-        //     write!(f, " {colour_code_trend}")?;
-        // }
-
         for wx in &self.recent_weather {
             f.write_str(" RE")?;
             if let Data::Known(wx_conditions) = wx {
@@ -364,6 +356,10 @@ impl Display for Metar {
                     write!(f, "{wx_condition}")?;
                 }
             }
+        }
+
+        if let Some(colour) = &self.colour_code {
+            write!(f, " {}", colour.to_opt_string(3))?;
         }
 
         for trend in &self.trends {
